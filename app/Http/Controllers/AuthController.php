@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\RegisterWithBusinessRequest;
+use App\Services\BusinessService;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -96,6 +98,46 @@ class AuthController extends Controller
         return response()->json([
             'data' => $request->user(),
         ], 200);
+    }
+
+    /**
+     * Register a new user with their first business
+     */
+    public function registerWithBusiness(RegisterWithBusinessRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+
+            // Separate user and business data
+            $userData = [
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'password' => $validated['password'],
+            ];
+
+            $businessData = [
+                'business_name' => $validated['business_name'],
+                'business_description' => $validated['business_description'] ?? null,
+                'business_address' => $validated['business_address'] ?? null,
+                'business_phone' => $validated['business_phone'] ?? null,
+                'business_email' => $validated['business_email'] ?? null,
+                'business_website' => $validated['business_website'] ?? null,
+            ];
+
+            $result = BusinessService::registerUserWithBusiness($userData, $businessData);
+
+            return response()->json([
+                'message' => 'User and business registered successfully',
+                'data' => $result,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Registration failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
 
